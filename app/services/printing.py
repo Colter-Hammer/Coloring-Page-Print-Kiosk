@@ -33,6 +33,9 @@ class PrinterClient(Protocol):
     async def print_pdf(self, pdf_bytes: bytes, job_name: str) -> None: ...
 
 
+CONNECT_TIMEOUT_SECONDS = 4
+
+
 class IPPPrinterClient:
     """Sends a print job directly to a printer's IP over IPP (no CUPS)."""
 
@@ -40,7 +43,11 @@ class IPPPrinterClient:
         self._printer_ip = printer_ip
 
     async def print_pdf(self, pdf_bytes: bytes, job_name: str) -> None:
-        ipp = IPP(host=self._printer_ip, base_path="/ipp/print")
+        ipp = IPP(
+            host=self._printer_ip,
+            base_path="/ipp/print",
+            request_timeout=CONNECT_TIMEOUT_SECONDS,
+        )
         try:
             await ipp.execute(
                 IppOperation.PRINT_JOB,

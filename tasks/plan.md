@@ -42,7 +42,7 @@ Already approved by the user via plan-mode. Executing in autonomous build mode.
 - [x] 9. Docker packaging: `Dockerfile`, `docker-compose.yml`,
       `.env.example`, `.dockerignore`. Verify: image builds, container
       starts, `data/` volume populated on first run.
-- [ ] 10. Full verification pass: run entire pytest suite, exercise manual
+- [x] 10. Full verification pass: run entire pytest suite, exercise manual
       admin + kid flows via TestClient/manual server run, confirm
       printer-unreachable and rate-limit paths per plan §Verification.
 
