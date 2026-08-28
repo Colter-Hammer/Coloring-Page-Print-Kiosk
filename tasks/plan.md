@@ -39,7 +39,7 @@ Already approved by the user via plan-mode. Executing in autonomous build mode.
       failure and rate-limit each render friendly fragment with no
       exception text leaked; rate-limited requests never call the printer
       client.
-- [ ] 9. Docker packaging: `Dockerfile`, `docker-compose.yml`,
+- [x] 9. Docker packaging: `Dockerfile`, `docker-compose.yml`,
       `.env.example`, `.dockerignore`. Verify: image builds, container
       starts, `data/` volume populated on first run.
 - [ ] 10. Full verification pass: run entire pytest suite, exercise manual

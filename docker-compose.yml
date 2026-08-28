@@ -1,0 +1,12 @@
+services:
+  app:
+    build: .
+    ports:
+      - "8080:8000"
+    volumes:
+      - ./data:/app/data
+    env_file: .env
+    environment:
+      DATABASE_PATH: /app/data/kiosk.db
+      IMAGES_DIR: /app/data/images
+    restart: unless-stopped
