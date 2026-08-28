@@ -1,0 +1,10 @@
+<div class="print-result">
+  {% if reason == "rate_limit" %}
+  <p>You've printed a lot already!</p>
+  <p>Ask a grown-up if you want more.</p>
+  {% else %}
+  <p>Oops!</p>
+  <p>Ask a grown-up for help.</p>
+  {% endif %}
+  <div hx-get="/category/{{ page.category_id }}" hx-trigger="load delay:3s" hx-target="#app" hx-swap="innerHTML"></div>
+</div>

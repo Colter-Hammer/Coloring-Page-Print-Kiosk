@@ -33,7 +33,7 @@ Already approved by the user via plan-mode. Executing in autonomous build mode.
 - [x] 7. Rate limiting: `print_log`-backed count of all attempts in trailing
       1h window. Test: limit enforced across mixed statuses, old rows don't
       count, resets after window.
-- [ ] 8. Print route wiring: `POST /print/{page_id}` in kiosk router,
+- [x] 8. Print route wiring: `POST /print/{page_id}` in kiosk router,
       `_print_success.html`/`_print_error.html` fragments with `load
       delay:3s` auto-return. Test: success fragment + log row; printer
       failure and rate-limit each render friendly fragment with no
