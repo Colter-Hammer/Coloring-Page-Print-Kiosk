@@ -1,5 +1,7 @@
 {% extends "base_kiosk.html" %}
+{% from "kiosk/_kiosk_header.html" import kiosk_header %}
 {% block title %}Coloring Kiosk{% endblock %}
+{% block header %}{{ kiosk_header('Coloring Kiosk') }}{% endblock %}
 {% block content %}
 <div class="tile-grid">
   {% for category in categories %}

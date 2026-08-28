@@ -1,0 +1,13 @@
+{% from "kiosk/_back_button.html" import back_button %}
+{% macro kiosk_header(title, back_href=none) %}
+<header class="kiosk-header">
+  {% if back_href %}{{ back_button(back_href) }}{% endif %}
+  <div class="kiosk-header-brand">
+    <svg class="kiosk-header-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 20h9" />
+      <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+    </svg>
+    <span class="kiosk-header-title">{{ title }}</span>
+  </div>
+</header>
+{% endmacro %}

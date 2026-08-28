@@ -43,10 +43,38 @@ html, body {
   text-align: center;
 }
 
+.kiosk-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 1rem 2rem;
+  background: #fefefe;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.06);
+}
+
+.kiosk-header-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.kiosk-header-icon {
+  width: 32px;
+  height: 32px;
+  color: #4c56d6;
+}
+
+.kiosk-header-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  letter-spacing: 0.01em;
+}
+
 .back-button {
-  position: fixed;
-  top: 1rem;
-  left: 1rem;
   width: 64px;
   height: 64px;
   display: flex;
@@ -60,7 +88,6 @@ html, body {
   text-decoration: none;
   color: #1a1a1a;
   cursor: pointer;
-  z-index: 10;
   transition: background-color 0.1s ease, transform 0.1s ease;
 }
 
