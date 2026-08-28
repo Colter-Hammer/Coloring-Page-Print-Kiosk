@@ -8,7 +8,7 @@ Already approved by the user via plan-mode. Executing in autonomous build mode.
       `requirements-dev.txt`, `pytest.ini`, `app/config.py`. No behavior yet.
 - [x] 1. Data models: `app/models.py` (Category, Page, PrintLog) + `app/db.py`
       (`init_db`, `get_db`). Test: create tables in-memory, insert/query rows.
-- [ ] 2. Admin auth: `SessionMiddleware` wiring in `app/main.py`, `require_admin`
+- [x] 2. Admin auth: `SessionMiddleware` wiring in `app/main.py`, `require_admin`
       dependency in `app/deps.py`, login/logout routes + `admin/login.html`.
       Test: unauthenticated redirect, wrong/correct password, session
       persistence, logout.

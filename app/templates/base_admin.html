@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Coloring Kiosk Admin{% endblock %}</title>
+  <link rel="stylesheet" href="/static/css/admin.css">
+</head>
+<body>
+  <header class="admin-header">
+    <h1>Coloring Kiosk — Admin</h1>
+    {% if request.session.get("authenticated") %}
+    <form method="post" action="/admin/logout" class="logout-form">
+      <button type="submit">Log out</button>
+    </form>
+    {% endif %}
+  </header>
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>
