@@ -54,9 +54,19 @@ html, body {
   justify-content: center;
   border-radius: 50%;
   background: #eef2ff;
+  border: none;
+  padding: 0;
+  font: inherit;
   text-decoration: none;
   color: #1a1a1a;
+  cursor: pointer;
   z-index: 10;
+  transition: background-color 0.1s ease, transform 0.1s ease;
+}
+
+.back-button:active {
+  background: #dbe4ff;
+  transform: scale(0.92);
 }
 
 .back-button-icon {

@@ -11,7 +11,16 @@ from app.config import get_settings
 from app.db import get_db
 from app.deps import require_admin
 from app.models import Category, Page
-from app.services.images import save_category_icon, save_page_images, validate_image
+from app.services.images import (
+    InvalidPdfError,
+    looks_like_pdf,
+    rasterize_pdf_page,
+    save_category_icon,
+    save_page_images,
+    save_page_images_from_image,
+    save_page_pdf,
+    validate_image,
+)
 from app.templating import templates
 
 router = APIRouter(prefix="/admin", tags=["admin"])
@@ -206,20 +215,36 @@ async def bulk_upload_pages(
     images_dir = Path(settings.images_dir)
     uploaded = 0
     skipped = 0
+    skip_reason_counts: dict[str, int] = {}
     for upload in files:
         if not upload.filename:
             continue
         file_bytes = await upload.read()
-        if not validate_image(file_bytes):
+
+        if looks_like_pdf(file_bytes):
+            try:
+                raster_img = rasterize_pdf_page(file_bytes)
+            except InvalidPdfError as exc:
+                skipped += 1
+                skip_reason_counts[exc.reason] = skip_reason_counts.get(exc.reason, 0) + 1
+                continue
+            image_path, thumb_path = save_page_images_from_image(raster_img, images_dir)
+            print_path = save_page_pdf(file_bytes, images_dir)
+        elif validate_image(file_bytes):
+            image_path, thumb_path = save_page_images(file_bytes, images_dir)
+            print_path = None
+        else:
             skipped += 1
+            skip_reason_counts["not_supported"] = skip_reason_counts.get("not_supported", 0) + 1
             continue
-        image_path, thumb_path = save_page_images(file_bytes, images_dir)
+
         db.add(
             Page(
                 category_id=category_id,
                 title=upload.filename,
                 image_path=image_path,
                 thumb_path=thumb_path,
+                print_path=print_path,
                 source="admin_upload",
             )
         )
@@ -227,7 +252,14 @@ async def bulk_upload_pages(
     db.commit()
     message = f"{uploaded} uploaded"
     if skipped:
-        message += f", {skipped} skipped (not an image)"
+        labels = {
+            "not_supported": "not an image or PDF",
+            "multi_page": "multi-page PDF",
+            "corrupt": "corrupt PDF",
+            "encrypted": "password-protected PDF",
+        }
+        parts = [f"{count} {labels[reason]}" for reason, count in skip_reason_counts.items() if count]
+        message += f", {skipped} skipped (" + "; ".join(parts) + ")"
     query = urlencode({"message": message})
     return RedirectResponse(url=f"/admin/categories/{category_id}?{query}", status_code=303)
 
@@ -240,7 +272,9 @@ def delete_page(page_id: int, db: Session = Depends(get_db)):
     category_id = page.category_id
     settings = get_settings()
     images_dir = Path(settings.images_dir)
-    for relative_path in (page.image_path, page.thumb_path):
+    for relative_path in (page.image_path, page.thumb_path, page.print_path):
+        if not relative_path:
+            continue
         file_path = images_dir / relative_path
         if file_path.exists():
             file_path.unlink()

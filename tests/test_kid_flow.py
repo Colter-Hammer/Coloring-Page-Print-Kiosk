@@ -61,13 +61,13 @@ def test_preview_renders_expected_page_image(client, db_session):
 def test_category_back_link_returns_home(client, db_session):
     c1, _c2, _page = _seed(db_session)
     response = client.get(f"/category/{c1.id}")
-    assert 'href="/"' in response.text
+    assert "location.href='/'" in response.text
 
 
 def test_preview_back_link_returns_to_category(client, db_session):
     c1, _c2, page = _seed(db_session)
     response = client.get(f"/preview/{page.id}")
-    assert f'href="/category/{c1.id}"' in response.text
+    assert f"location.href='/category/{c1.id}'" in response.text
 
 
 class FakePrinterClient:
@@ -93,6 +93,43 @@ def _seed_with_real_image(db_session, images_dir):
     db_session.add(page)
     db_session.commit()
     return category, page
+
+
+def _seed_with_print_pdf(db_session, images_dir):
+    category = Category(name="Animals", sort_order=1)
+    db_session.add(category)
+    db_session.flush()
+    image_path = "pages/full/test.png"
+    print_path = "pages/print_pdf/test.pdf"
+    full_path = images_dir / image_path
+    full_path.parent.mkdir(parents=True, exist_ok=True)
+    Image.new("RGB", (200, 200), "red").save(full_path, format="PNG")
+    pdf_path = images_dir / print_path
+    pdf_path.parent.mkdir(parents=True, exist_ok=True)
+    pdf_path.write_bytes(b"%PDF-fake-print-bytes")
+    page = Page(
+        category_id=category.id,
+        image_path=image_path,
+        thumb_path=image_path,
+        print_path=print_path,
+    )
+    db_session.add(page)
+    db_session.commit()
+    return category, page
+
+
+def test_print_sends_print_path_bytes_verbatim(db_session, images_dir):
+    _category, page = _seed_with_print_pdf(db_session, images_dir)
+    fake_printer = FakePrinterClient()
+    app.dependency_overrides[get_db] = lambda: db_session
+    app.dependency_overrides[get_printer_client] = lambda: fake_printer
+    with TestClient(app, follow_redirects=False) as test_client:
+        response = test_client.post(f"/print/{page.id}")
+    app.dependency_overrides.clear()
+
+    assert response.status_code == 200
+    assert len(fake_printer.calls) == 1
+    assert fake_printer.calls[0][0] == b"%PDF-fake-print-bytes"
 
 
 def test_print_success_shows_confirmation_and_logs(db_session, images_dir):

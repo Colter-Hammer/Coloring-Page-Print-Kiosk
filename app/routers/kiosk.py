@@ -68,7 +68,10 @@ async def print_page(
 
     images_dir = Path(settings.images_dir)
     try:
-        pdf_bytes = image_to_pdf(images_dir / page.image_path, page_size=settings.page_size)
+        if page.print_path:
+            pdf_bytes = (images_dir / page.print_path).read_bytes()
+        else:
+            pdf_bytes = image_to_pdf(images_dir / page.image_path, page_size=settings.page_size)
         await printer_client.print_pdf(pdf_bytes, job_name=page.title or f"page-{page.id}")
     except Exception:
         logger.exception("Print failed for page_id=%s", page_id)
