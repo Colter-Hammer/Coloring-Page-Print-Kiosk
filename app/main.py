@@ -9,7 +9,7 @@ from starlette.middleware.sessions import SessionMiddleware
 from app.config import get_settings
 from app.db import init_db
 from app.deps import NotAuthenticated
-from app.routers import admin
+from app.routers import admin, kiosk
 
 STATIC_DIR = Path(__file__).parent / "static"
 
@@ -39,6 +39,7 @@ def create_app() -> FastAPI:
     async def _not_authenticated_handler(request: Request, exc: NotAuthenticated):
         return RedirectResponse(url="/admin/login", status_code=303)
 
+    fastapi_app.include_router(kiosk.router)
     fastapi_app.include_router(admin.router)
 
     return fastapi_app

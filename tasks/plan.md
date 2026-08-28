@@ -20,7 +20,7 @@ Already approved by the user via plan-mode. Executing in autonomous build mode.
       (validate/save/thumbnail), admin bulk-upload/delete/recategorize routes
       + `admin/category_detail.html`. Test: bulk upload valid+invalid mix,
       delete, recategorize.
-- [ ] 5. Kid UI browsing: `app/routers/kiosk.py` (home/category/preview) +
+- [x] 5. Kid UI browsing: `app/routers/kiosk.py` (home/category/preview) +
       `kiosk/home.html`, `kiosk/category.html`, `kiosk/preview.html`,
       `base_kiosk.html`, vendored `htmx.min.js`, `kiosk.css`/`admin.css`.
       Test: home lists categories in order, category lists only its pages,

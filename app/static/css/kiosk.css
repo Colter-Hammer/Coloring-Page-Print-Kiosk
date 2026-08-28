@@ -1,0 +1,105 @@
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  min-height: 100%;
+  font-family: system-ui, sans-serif;
+  background: #fefefe;
+}
+
+.tile-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 1.5rem;
+  padding: 2rem;
+}
+
+.tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 150px;
+  min-width: 150px;
+  border-radius: 16px;
+  background: #eef2ff;
+  text-decoration: none;
+  color: #1a1a1a;
+  padding: 1rem;
+}
+
+.tile-icon {
+  max-width: 100%;
+  max-height: 120px;
+  object-fit: contain;
+}
+
+.tile-label {
+  margin-top: 0.5rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.back-button {
+  position: fixed;
+  top: 1rem;
+  left: 1rem;
+  font-size: 2rem;
+  width: 64px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #eef2ff;
+  text-decoration: none;
+  color: #1a1a1a;
+  z-index: 10;
+}
+
+.preview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2rem;
+  gap: 1.5rem;
+}
+
+.preview-image {
+  max-width: 90vw;
+  max-height: 60vh;
+  object-fit: contain;
+  border: 1px solid #ddd;
+}
+
+.print-button {
+  font-size: 2rem;
+  padding: 1rem 3rem;
+  border-radius: 16px;
+  border: none;
+  background: #22c55e;
+  color: white;
+  cursor: pointer;
+}
+
+.htmx-indicator {
+  display: none;
+}
+
+.htmx-request.htmx-indicator {
+  display: block;
+  font-size: 1.5rem;
+}
+
+.print-result {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 3rem;
+  gap: 1rem;
+  font-size: 1.75rem;
+  text-align: center;
+}

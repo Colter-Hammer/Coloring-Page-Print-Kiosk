@@ -1,0 +1,12 @@
+{% extends "base_kiosk.html" %}
+{% block title %}{{ category.name }} — Coloring Kiosk{% endblock %}
+{% block content %}
+<a href="/" class="back-button" aria-label="Back">&larr;</a>
+<div class="tile-grid">
+  {% for page in pages %}
+  <a href="/preview/{{ page.id }}" class="tile">
+    <img src="/media/{{ page.thumb_path }}" alt="" class="tile-icon">
+  </a>
+  {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,18 @@
+{% extends "base_kiosk.html" %}
+{% block title %}Preview — Coloring Kiosk{% endblock %}
+{% block content %}
+<a href="/category/{{ page.category_id }}" class="back-button" aria-label="Back">&larr;</a>
+<div class="preview">
+  <img src="/media/{{ page.image_path }}" alt="" class="preview-image">
+  <button
+    class="print-button"
+    hx-post="/print/{{ page.id }}"
+    hx-target="#app"
+    hx-swap="innerHTML"
+    hx-indicator="#spinner"
+  >
+    Print
+  </button>
+  <div id="spinner" class="htmx-indicator">Printing…</div>
+</div>
+{% endblock %}

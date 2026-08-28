@@ -1,0 +1,14 @@
+{% extends "base_kiosk.html" %}
+{% block title %}Coloring Kiosk{% endblock %}
+{% block content %}
+<div class="tile-grid">
+  {% for category in categories %}
+  <a href="/category/{{ category.id }}" class="tile">
+    {% if category.icon_image_path %}
+      <img src="/media/{{ category.icon_image_path }}" alt="" class="tile-icon">
+    {% endif %}
+    <span class="tile-label">{{ category.name }}</span>
+  </a>
+  {% endfor %}
+</div>
+{% endblock %}
