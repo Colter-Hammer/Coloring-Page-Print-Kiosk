@@ -14,7 +14,7 @@ def validate_image(file_bytes: bytes) -> bool:
         return False
 
 
-def _flatten_to_white(img: Image.Image) -> Image.Image:
+def flatten_to_white(img: Image.Image) -> Image.Image:
     if img.mode in ("RGBA", "LA") or (img.mode == "P" and "transparency" in img.info):
         rgba = img.convert("RGBA")
         background = Image.new("RGB", img.size, "white")
@@ -30,7 +30,7 @@ def _new_filename() -> str:
 def save_resized_image(file_bytes: bytes, dest_path: Path, max_size: int) -> None:
     dest_path.parent.mkdir(parents=True, exist_ok=True)
     with Image.open(io.BytesIO(file_bytes)) as img:
-        flattened = _flatten_to_white(img)
+        flattened = flatten_to_white(img)
         flattened.thumbnail((max_size, max_size))
         flattened.save(dest_path, format="JPEG", quality=85)
 

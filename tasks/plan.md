@@ -25,7 +25,7 @@ Already approved by the user via plan-mode. Executing in autonomous build mode.
       `base_kiosk.html`, vendored `htmx.min.js`, `kiosk.css`/`admin.css`.
       Test: home lists categories in order, category lists only its pages,
       preview renders expected page, back-navigation paths exist.
-- [ ] 6. Printing service: `app/services/printing.py`
+- [x] 6. Printing service: `app/services/printing.py`
       (`PrinterClient`/`IPPPrinterClient`, `PrinterUnreachableError`,
       `PrinterJobError`, `image_to_pdf`). Test: mocked success,
       unreachable/job-error paths raise correctly, `image_to_pdf` produces
