@@ -1,4 +1,5 @@
 import io
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Protocol
 
@@ -6,7 +7,10 @@ from PIL import Image
 from pyipp import IPP
 from pyipp.enums import IppOperation
 from pyipp.exceptions import IPPConnectionError, IPPError
+from sqlalchemy import func
+from sqlalchemy.orm import Session
 
+from app.models import PrintLog
 from app.services.images import flatten_to_white
 
 PAGE_SIZES_INCHES = {
@@ -74,3 +78,17 @@ def image_to_pdf(image_path: Path, page_size: str = "letter") -> bytes:
         buffer = io.BytesIO()
         canvas.save(buffer, format="PDF", resolution=DPI)
         return buffer.getvalue()
+
+
+def get_recent_print_count(db: Session, window_hours: int = 1) -> int:
+    """Counts ALL print_log rows (any status) in the trailing window.
+
+    Counting every attempt, not just successes, is what stops repeated taps
+    against a broken/offline printer from bypassing the rate limit.
+    """
+    cutoff = datetime.now(UTC).replace(tzinfo=None) - timedelta(hours=window_hours)
+    return db.query(func.count(PrintLog.id)).filter(PrintLog.printed_at >= cutoff).scalar()
+
+
+def is_rate_limited(db: Session, limit: int, window_hours: int = 1) -> bool:
+    return get_recent_print_count(db, window_hours=window_hours) >= limit

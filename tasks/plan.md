@@ -30,7 +30,7 @@ Already approved by the user via plan-mode. Executing in autonomous build mode.
       `PrinterJobError`, `image_to_pdf`). Test: mocked success,
       unreachable/job-error paths raise correctly, `image_to_pdf` produces
       valid PDF bytes.
-- [ ] 7. Rate limiting: `print_log`-backed count of all attempts in trailing
+- [x] 7. Rate limiting: `print_log`-backed count of all attempts in trailing
       1h window. Test: limit enforced across mixed statuses, old rows don't
       count, resets after window.
 - [ ] 8. Print route wiring: `POST /print/{page_id}` in kiosk router,
