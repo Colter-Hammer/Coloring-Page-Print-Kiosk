@@ -27,3 +27,19 @@ def db_session():
     finally:
         session.close()
         engine.dispose()
+
+
+@pytest.fixture
+def images_dir(tmp_path, monkeypatch):
+    """Redirect IMAGES_DIR to an isolated tmp_path for the duration of a test.
+
+    Must be requested before any fixture that constructs a TestClient (which
+    triggers the app's lifespan/init_db using the cached Settings), so the
+    real ./data directory is never touched.
+    """
+    from app.config import get_settings
+
+    monkeypatch.setenv("IMAGES_DIR", str(tmp_path))
+    get_settings.cache_clear()
+    yield tmp_path
+    get_settings.cache_clear()

@@ -31,6 +31,10 @@ def create_app() -> FastAPI:
     )
     fastapi_app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
+    images_dir = Path(settings.images_dir)
+    images_dir.mkdir(parents=True, exist_ok=True)
+    fastapi_app.mount("/media", StaticFiles(directory=str(images_dir)), name="media")
+
     @fastapi_app.exception_handler(NotAuthenticated)
     async def _not_authenticated_handler(request: Request, exc: NotAuthenticated):
         return RedirectResponse(url="/admin/login", status_code=303)

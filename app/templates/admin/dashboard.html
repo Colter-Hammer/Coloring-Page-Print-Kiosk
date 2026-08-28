@@ -2,5 +2,9 @@
 {% block title %}Dashboard — Coloring Kiosk Admin{% endblock %}
 {% block content %}
 <h2>Categories</h2>
-<p>Category management coming soon.</p>
+{% if error %}<p class="error">{{ error }}</p>{% endif %}
+<a href="/admin/categories/new" class="button">+ New category</a>
+<div id="category-list">
+  {% include "admin/_category_list.html" %}
+</div>
 {% endblock %}

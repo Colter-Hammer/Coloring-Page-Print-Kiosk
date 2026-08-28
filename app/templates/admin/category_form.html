@@ -1,0 +1,19 @@
+{% extends "base_admin.html" %}
+{% block title %}{{ "Edit" if category else "New" }} Category — Coloring Kiosk Admin{% endblock %}
+{% block content %}
+<h2>{{ "Edit" if category else "New" }} Category</h2>
+{% if error %}<p class="error">{{ error }}</p>{% endif %}
+<form method="post" action="{{ '/admin/categories/' ~ category.id if category else '/admin/categories' }}" enctype="multipart/form-data">
+  <label for="name">Name</label>
+  <input type="text" id="name" name="name" value="{{ category.name if category else '' }}" required>
+
+  <label for="icon">Tile icon image {{ "(leave blank to keep current)" if category else "(optional)" }}</label>
+  {% if category and category.icon_image_path %}
+    <img src="/media/{{ category.icon_image_path }}" alt="" class="category-icon-preview">
+  {% endif %}
+  <input type="file" id="icon" name="icon" accept="image/*">
+
+  <button type="submit">Save</button>
+</form>
+<a href="/admin">Back to dashboard</a>
+{% endblock %}

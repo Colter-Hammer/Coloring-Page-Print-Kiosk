@@ -1,0 +1,24 @@
+<ul class="category-list">
+  {% for category in categories %}
+  <li class="category-row">
+    {% if category.icon_image_path %}
+      <img src="/media/{{ category.icon_image_path }}" alt="" class="category-icon">
+    {% endif %}
+    <span class="category-name">{{ category.name }}</span>
+    <span class="category-count">{{ category.pages|length }} page(s)</span>
+    <a href="/admin/categories/{{ category.id }}">Manage pages</a>
+    <a href="/admin/categories/{{ category.id }}/edit">Edit</a>
+    <form method="post" action="/admin/categories/{{ category.id }}/move-up" class="inline-form">
+      <button type="submit" {% if loop.first %}disabled{% endif %}>Move up</button>
+    </form>
+    <form method="post" action="/admin/categories/{{ category.id }}/move-down" class="inline-form">
+      <button type="submit" {% if loop.last %}disabled{% endif %}>Move down</button>
+    </form>
+    <form method="post" action="/admin/categories/{{ category.id }}/delete" class="inline-form">
+      <button type="submit">Delete</button>
+    </form>
+  </li>
+  {% else %}
+  <li>No categories yet.</li>
+  {% endfor %}
+</ul>

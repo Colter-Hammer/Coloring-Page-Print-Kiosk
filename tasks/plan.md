@@ -12,7 +12,7 @@ Already approved by the user via plan-mode. Executing in autonomous build mode.
       dependency in `app/deps.py`, login/logout routes + `admin/login.html`.
       Test: unauthenticated redirect, wrong/correct password, session
       persistence, logout.
-- [ ] 3. Category management: admin routes (create/edit/delete/reorder) +
+- [x] 3. Category management: admin routes (create/edit/delete/reorder) +
       `admin/dashboard.html`, `admin/category_form.html`,
       `admin/_category_list.html`. Test: create/edit/reorder, delete blocked
       when pages exist / allowed when empty.
