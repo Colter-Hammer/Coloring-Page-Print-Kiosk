@@ -1,0 +1,35 @@
+{% extends "base_admin.html" %}
+{% block title %}{{ category.name }} — Coloring Kiosk Admin{% endblock %}
+{% block content %}
+<a href="/admin">&larr; Back to dashboard</a>
+<h2>{{ category.name }}</h2>
+{% if message %}<p class="message">{{ message }}</p>{% endif %}
+
+<form method="post" action="/admin/categories/{{ category.id }}/pages" enctype="multipart/form-data">
+  <label for="files">Upload images</label>
+  <input type="file" id="files" name="files" accept="image/*" multiple required>
+  <button type="submit">Upload</button>
+</form>
+
+<ul class="page-grid">
+  {% for page in pages %}
+  <li class="page-row">
+    <img src="/media/{{ page.thumb_path }}" alt="" class="page-thumb">
+    <span>{{ page.title or "Untitled" }}</span>
+    <form method="post" action="/admin/pages/{{ page.id }}/recategorize" class="inline-form">
+      <select name="category_id">
+        {% for c in all_categories %}
+        <option value="{{ c.id }}" {% if c.id == category.id %}selected{% endif %}>{{ c.name }}</option>
+        {% endfor %}
+      </select>
+      <button type="submit">Move</button>
+    </form>
+    <form method="post" action="/admin/pages/{{ page.id }}/delete" class="inline-form">
+      <button type="submit">Delete</button>
+    </form>
+  </li>
+  {% else %}
+  <li>No pages in this category yet.</li>
+  {% endfor %}
+</ul>
+{% endblock %}

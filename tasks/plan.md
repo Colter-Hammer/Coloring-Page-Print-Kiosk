@@ -16,7 +16,7 @@ Already approved by the user via plan-mode. Executing in autonomous build mode.
       `admin/dashboard.html`, `admin/category_form.html`,
       `admin/_category_list.html`. Test: create/edit/reorder, delete blocked
       when pages exist / allowed when empty.
-- [ ] 4. Image service + page management: `app/services/images.py`
+- [x] 4. Image service + page management: `app/services/images.py`
       (validate/save/thumbnail), admin bulk-upload/delete/recategorize routes
       + `admin/category_detail.html`. Test: bulk upload valid+invalid mix,
       delete, recategorize.

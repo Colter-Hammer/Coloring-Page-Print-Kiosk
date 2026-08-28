@@ -1,5 +1,6 @@
 import secrets
 from pathlib import Path
+from urllib.parse import urlencode
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import RedirectResponse
@@ -9,8 +10,8 @@ from sqlalchemy.orm import Session
 from app.config import get_settings
 from app.db import get_db
 from app.deps import require_admin
-from app.models import Category
-from app.services.images import save_category_icon, validate_image
+from app.models import Category, Page
+from app.services.images import save_category_icon, save_page_images, validate_image
 from app.templating import templates
 
 router = APIRouter(prefix="/admin", tags=["admin"])
@@ -162,3 +163,103 @@ def move_category_up(category_id: int, db: Session = Depends(get_db)):
 def move_category_down(category_id: int, db: Session = Depends(get_db)):
     _swap_sort_order(db, category_id, direction=1)
     return RedirectResponse(url="/admin", status_code=303)
+
+
+@router.get("/categories/{category_id}", dependencies=[Depends(require_admin)])
+def category_detail(
+    category_id: int,
+    request: Request,
+    message: str | None = None,
+    db: Session = Depends(get_db),
+):
+    category = db.get(Category, category_id)
+    if category is None:
+        raise HTTPException(status_code=404)
+    pages = (
+        db.query(Page)
+        .filter(Page.category_id == category_id)
+        .order_by(Page.created_at)
+        .all()
+    )
+    return templates.TemplateResponse(
+        request,
+        "admin/category_detail.html",
+        {
+            "category": category,
+            "pages": pages,
+            "all_categories": _ordered_categories(db),
+            "message": message,
+        },
+    )
+
+
+@router.post("/categories/{category_id}/pages", dependencies=[Depends(require_admin)])
+async def bulk_upload_pages(
+    category_id: int,
+    files: list[UploadFile] = File(...),
+    db: Session = Depends(get_db),
+):
+    category = db.get(Category, category_id)
+    if category is None:
+        raise HTTPException(status_code=404)
+    settings = get_settings()
+    images_dir = Path(settings.images_dir)
+    uploaded = 0
+    skipped = 0
+    for upload in files:
+        if not upload.filename:
+            continue
+        file_bytes = await upload.read()
+        if not validate_image(file_bytes):
+            skipped += 1
+            continue
+        image_path, thumb_path = save_page_images(file_bytes, images_dir)
+        db.add(
+            Page(
+                category_id=category_id,
+                title=upload.filename,
+                image_path=image_path,
+                thumb_path=thumb_path,
+                source="admin_upload",
+            )
+        )
+        uploaded += 1
+    db.commit()
+    message = f"{uploaded} uploaded"
+    if skipped:
+        message += f", {skipped} skipped (not an image)"
+    query = urlencode({"message": message})
+    return RedirectResponse(url=f"/admin/categories/{category_id}?{query}", status_code=303)
+
+
+@router.post("/pages/{page_id}/delete", dependencies=[Depends(require_admin)])
+def delete_page(page_id: int, db: Session = Depends(get_db)):
+    page = db.get(Page, page_id)
+    if page is None:
+        raise HTTPException(status_code=404)
+    category_id = page.category_id
+    settings = get_settings()
+    images_dir = Path(settings.images_dir)
+    for relative_path in (page.image_path, page.thumb_path):
+        file_path = images_dir / relative_path
+        if file_path.exists():
+            file_path.unlink()
+    db.delete(page)
+    db.commit()
+    return RedirectResponse(url=f"/admin/categories/{category_id}", status_code=303)
+
+
+@router.post("/pages/{page_id}/recategorize", dependencies=[Depends(require_admin)])
+def recategorize_page(
+    page_id: int, category_id: int = Form(...), db: Session = Depends(get_db)
+):
+    page = db.get(Page, page_id)
+    if page is None:
+        raise HTTPException(status_code=404)
+    new_category = db.get(Category, category_id)
+    if new_category is None:
+        raise HTTPException(status_code=404)
+    old_category_id = page.category_id
+    page.category_id = category_id
+    db.commit()
+    return RedirectResponse(url=f"/admin/categories/{old_category_id}", status_code=303)
