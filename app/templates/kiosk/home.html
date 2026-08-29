@@ -3,14 +3,24 @@
 {% block title %}Coloring Kiosk{% endblock %}
 {% block header %}{{ kiosk_header('Coloring Kiosk') }}{% endblock %}
 {% block content %}
-<div class="tile-grid">
-  {% for category in categories %}
-  <a href="/category/{{ category.id }}" class="tile">
-    {% if category.icon_image_path %}
-      <img src="/media/{{ category.icon_image_path }}" alt="" class="tile-icon">
-    {% endif %}
-    <span class="tile-label">{{ category.name }}</span>
-  </a>
-  {% endfor %}
+<div class="kiosk-shell">
+  <div class="tile-grid">
+    {% for category in categories %}
+    <a href="/category/{{ category.id }}" class="tile">
+      <span class="tile-image-frame">
+        {% if category.icon_image_path %}
+          <img src="/media/{{ category.icon_image_path }}" alt="" class="tile-icon">
+        {% else %}
+          <svg class="tile-icon-placeholder" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="3" />
+            <circle cx="9" cy="9" r="2" />
+            <path d="m21 15-5-5L5 21" />
+          </svg>
+        {% endif %}
+      </span>
+      <span class="tile-label">{{ category.name }}</span>
+    </a>
+    {% endfor %}
+  </div>
 </div>
 {% endblock %}

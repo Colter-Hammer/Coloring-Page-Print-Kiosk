@@ -3,11 +3,13 @@
 {% block title %}{{ category.name }} — Coloring Kiosk{% endblock %}
 {% block header %}{{ kiosk_header('Coloring Kiosk', back_href='/') }}{% endblock %}
 {% block content %}
-<div class="tile-grid">
-  {% for page in pages %}
-  <a href="/preview/{{ page.id }}" class="tile">
-    <img src="/media/{{ page.thumb_path }}" alt="" class="tile-icon">
-  </a>
-  {% endfor %}
+<div class="kiosk-shell">
+  <div class="page-grid">
+    {% for page in pages %}
+    <a href="/preview/{{ page.id }}" class="page-card">
+      <img src="/media/{{ page.thumb_path }}" alt="" class="page-card-thumb">
+    </a>
+    {% endfor %}
+  </div>
 </div>
 {% endblock %}

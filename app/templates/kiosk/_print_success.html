@@ -1,5 +1,10 @@
 <div class="print-result">
-  <p>&#10003; All done!</p>
+  <span class="print-result-icon print-result-icon-success">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M20 6 9 17l-5-5" />
+    </svg>
+  </span>
+  <h2>All done!</h2>
   <p>Go grab it from the printer.</p>
   <div hx-get="/category/{{ page.category_id }}" hx-trigger="load delay:3s" hx-target="#app" hx-swap="innerHTML"></div>
 </div>
