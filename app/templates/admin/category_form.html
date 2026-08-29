@@ -1,19 +1,48 @@
 {% extends "base_admin.html" %}
 {% block title %}{{ "Edit" if category else "New" }} Category — Coloring Kiosk Admin{% endblock %}
 {% block content %}
-<h2>{{ "Edit" if category else "New" }} Category</h2>
-{% if error %}<p class="error">{{ error }}</p>{% endif %}
-<form method="post" action="{{ '/admin/categories/' ~ category.id if category else '/admin/categories' }}" enctype="multipart/form-data">
-  <label for="name">Name</label>
-  <input type="text" id="name" name="name" value="{{ category.name if category else '' }}" required>
+<div class="admin-shell">
+  <a href="/admin" class="breadcrumb">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M19 12H5M12 19l-7-7 7-7" />
+    </svg>
+    Categories
+  </a>
 
-  <label for="icon">Tile icon image {{ "(leave blank to keep current)" if category else "(optional)" }}</label>
-  {% if category and category.icon_image_path %}
-    <img src="/media/{{ category.icon_image_path }}" alt="" class="category-icon-preview">
-  {% endif %}
-  <input type="file" id="icon" name="icon" accept="image/*">
+  <div class="card form-card">
+    <h2>{{ "Edit" if category else "New" }} category</h2>
 
-  <button type="submit">Save</button>
-</form>
-<a href="/admin">Back to dashboard</a>
+    {% if error %}
+    <div class="alert alert-error" role="alert">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10" />
+        <path d="M12 8v4M12 16h.01" />
+      </svg>
+      <p>{{ error }}</p>
+    </div>
+    {% endif %}
+
+    <form method="post" action="{{ '/admin/categories/' ~ category.id if category else '/admin/categories' }}" enctype="multipart/form-data">
+      <div class="field">
+        <label for="name">Name</label>
+        <input type="text" id="name" name="name" value="{{ category.name if category else '' }}" required autofocus>
+      </div>
+
+      <div class="field">
+        <label for="icon">Tile icon image <span class="field-hint">{{ "leave blank to keep current" if category else "optional" }}</span></label>
+        <div class="file-field" data-file-field>
+          {% if category and category.icon_image_path %}
+            <img src="/media/{{ category.icon_image_path }}" alt="" class="category-icon-preview">
+          {% endif %}
+          <input type="file" id="icon" name="icon" accept="image/*">
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">Save category</button>
+        <a href="/admin" class="btn btn-ghost">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
 {% endblock %}

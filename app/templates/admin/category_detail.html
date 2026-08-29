@@ -1,35 +1,86 @@
 {% extends "base_admin.html" %}
 {% block title %}{{ category.name }} — Coloring Kiosk Admin{% endblock %}
 {% block content %}
-<a href="/admin">&larr; Back to dashboard</a>
-<h2>{{ category.name }}</h2>
-{% if message %}<p class="message">{{ message }}</p>{% endif %}
+<div class="admin-shell">
+  <a href="/admin" class="breadcrumb">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M19 12H5M12 19l-7-7 7-7" />
+    </svg>
+    Categories
+  </a>
 
-<form method="post" action="/admin/categories/{{ category.id }}/pages" enctype="multipart/form-data">
-  <label for="files">Upload images or PDFs</label>
-  <input type="file" id="files" name="files" accept="image/*,application/pdf" multiple required>
-  <button type="submit">Upload</button>
-</form>
+  <div class="page-heading">
+    <div>
+      <span class="page-heading-eyebrow">{{ pages|length }} page{{ "" if pages|length == 1 else "s" }}</span>
+      <h2>{{ category.name }}</h2>
+    </div>
+  </div>
 
-<ul class="page-grid">
-  {% for page in pages %}
-  <li class="page-row">
-    <img src="/media/{{ page.thumb_path }}" alt="" class="page-thumb">
-    <span>{{ page.title or "Untitled" }}</span>
-    <form method="post" action="/admin/pages/{{ page.id }}/recategorize" class="inline-form">
-      <select name="category_id">
-        {% for c in all_categories %}
-        <option value="{{ c.id }}" {% if c.id == category.id %}selected{% endif %}>{{ c.name }}</option>
-        {% endfor %}
-      </select>
-      <button type="submit">Move</button>
+  {% if message %}
+  <div class="alert alert-success" role="status">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M20 6 9 17l-5-5" />
+    </svg>
+    <p>{{ message }}</p>
+  </div>
+  {% endif %}
+
+  <div class="card upload-panel">
+    <div class="upload-panel-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 16V4M6 10l6-6 6 6" />
+        <path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" />
+      </svg>
+    </div>
+    <div class="upload-panel-text">
+      <h3>Upload pages</h3>
+      <p>Images or PDFs, multiple at once</p>
+    </div>
+    <form method="post" action="/admin/categories/{{ category.id }}/pages" enctype="multipart/form-data" class="upload-form">
+      <label for="files" class="sr-only">Upload images or PDFs</label>
+      <input type="file" id="files" name="files" accept="image/*,application/pdf" multiple required>
+      <button type="submit" class="btn btn-primary">Upload</button>
     </form>
-    <form method="post" action="/admin/pages/{{ page.id }}/delete" class="inline-form">
-      <button type="submit">Delete</button>
-    </form>
-  </li>
-  {% else %}
-  <li>No pages in this category yet.</li>
-  {% endfor %}
-</ul>
+  </div>
+
+  <ul class="page-grid">
+    {% for page in pages %}
+    <li class="page-row card">
+      <div class="page-thumb-frame">
+        <img src="/media/{{ page.thumb_path }}" alt="" class="page-thumb">
+      </div>
+      <span class="page-title" title="{{ page.title or 'Untitled' }}">{{ page.title or "Untitled" }}</span>
+
+      <div class="page-controls">
+        <form method="post" action="/admin/pages/{{ page.id }}/recategorize" class="inline-form page-move-form">
+          <label for="category-{{ page.id }}" class="sr-only">Move to category</label>
+          <select name="category_id" id="category-{{ page.id }}">
+            {% for c in all_categories %}
+            <option value="{{ c.id }}" {% if c.id == category.id %}selected{% endif %}>{{ c.name }}</option>
+            {% endfor %}
+          </select>
+          <button type="submit" class="btn btn-secondary btn-sm">Move</button>
+        </form>
+        <form method="post" action="/admin/pages/{{ page.id }}/delete" class="inline-form" data-confirm="Delete this page? This can't be undone.">
+          <button type="submit" class="btn btn-danger-ghost btn-sm btn-icon" aria-label="Delete page">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6h16z" />
+            </svg>
+          </button>
+        </form>
+      </div>
+    </li>
+    {% else %}
+    <li class="empty-state">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="3" width="18" height="18" rx="2" />
+        <circle cx="8.5" cy="8.5" r="1.5" />
+        <path d="M21 15l-5-5L5 21" />
+      </svg>
+      <h3>No pages yet</h3>
+      <p>Upload images or PDFs above to add coloring pages to this category.</p>
+    </li>
+    {% endfor %}
+  </ul>
+</div>
 {% endblock %}

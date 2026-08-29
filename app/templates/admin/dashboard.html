@@ -1,10 +1,32 @@
 {% extends "base_admin.html" %}
 {% block title %}Dashboard — Coloring Kiosk Admin{% endblock %}
 {% block content %}
-<h2>Categories</h2>
-{% if error %}<p class="error">{{ error }}</p>{% endif %}
-<a href="/admin/categories/new" class="button">+ New category</a>
-<div id="category-list">
-  {% include "admin/_category_list.html" %}
+<div class="admin-shell">
+  <div class="page-heading">
+    <div>
+      <span class="page-heading-eyebrow">{{ categories|length }} categor{{ "y" if categories|length == 1 else "ies" }}</span>
+      <h2>Categories</h2>
+    </div>
+    <a href="/admin/categories/new" class="btn btn-primary">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 5v14M5 12h14" />
+      </svg>
+      New category
+    </a>
+  </div>
+
+  {% if error %}
+  <div class="alert alert-error" role="alert">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="10" />
+      <path d="M12 8v4M12 16h.01" />
+    </svg>
+    <p>{{ error }}</p>
+  </div>
+  {% endif %}
+
+  <div id="category-list">
+    {% include "admin/_category_list.html" %}
+  </div>
 </div>
 {% endblock %}
