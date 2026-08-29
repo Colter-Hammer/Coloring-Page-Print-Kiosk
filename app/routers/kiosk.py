@@ -8,7 +8,7 @@ from app.config import get_settings
 from app.db import get_db
 from app.deps import get_printer_client
 from app.models import Category, Page, PrintLog
-from app.services.printing import PrinterClient, image_to_pdf, is_rate_limited
+from app.services.printing import PrinterClient, image_to_jpeg, is_rate_limited, pdf_to_jpeg
 from app.templating import templates
 
 logger = logging.getLogger(__name__)
@@ -70,9 +70,10 @@ async def print_page(
     try:
         if page.print_path:
             pdf_bytes = (images_dir / page.print_path).read_bytes()
+            jpeg_bytes = pdf_to_jpeg(pdf_bytes, page_size=settings.page_size)
         else:
-            pdf_bytes = image_to_pdf(images_dir / page.image_path, page_size=settings.page_size)
-        await printer_client.print_pdf(pdf_bytes, job_name=page.title or f"page-{page.id}")
+            jpeg_bytes = image_to_jpeg(images_dir / page.image_path, page_size=settings.page_size)
+        await printer_client.print_job(jpeg_bytes, job_name=page.title or f"page-{page.id}")
     except Exception:
         logger.exception("Print failed for page_id=%s", page_id)
         db.add(PrintLog(page_id=page_id, status="failed"))

@@ -7,7 +7,7 @@ from app.services.printing import (
     IPPPrinterClient,
     PrinterJobError,
     PrinterUnreachableError,
-    image_to_pdf,
+    image_to_jpeg,
 )
 
 
@@ -17,16 +17,16 @@ def _make_test_image(tmp_path, mode="RGBA", color=(255, 0, 0, 128)):
     return path
 
 
-def test_image_to_pdf_produces_valid_pdf_bytes(tmp_path):
+def test_image_to_jpeg_produces_valid_jpeg_bytes(tmp_path):
     image_path = _make_test_image(tmp_path)
-    pdf_bytes = image_to_pdf(image_path, page_size="letter")
-    assert pdf_bytes.startswith(b"%PDF")
+    jpeg_bytes = image_to_jpeg(image_path, page_size="letter")
+    assert jpeg_bytes.startswith(b"\xff\xd8\xff")
 
 
-def test_image_to_pdf_handles_transparent_images(tmp_path):
+def test_image_to_jpeg_handles_transparent_images(tmp_path):
     image_path = _make_test_image(tmp_path, mode="RGBA", color=(0, 255, 0, 0))
-    pdf_bytes = image_to_pdf(image_path, page_size="a4")
-    assert pdf_bytes.startswith(b"%PDF")
+    jpeg_bytes = image_to_jpeg(image_path, page_size="a4")
+    assert jpeg_bytes.startswith(b"\xff\xd8\xff")
 
 
 @pytest.mark.asyncio
@@ -47,7 +47,7 @@ async def test_ipp_printer_client_raises_unreachable_on_connection_error(monkeyp
 
     client = IPPPrinterClient("192.0.2.1")
     with pytest.raises(PrinterUnreachableError):
-        await client.print_pdf(b"%PDF-fake", "Test Job")
+        await client.print_job(b"\xff\xd8\xff-fake", "Test Job")
 
 
 @pytest.mark.asyncio
@@ -68,11 +68,11 @@ async def test_ipp_printer_client_raises_job_error_on_ipp_error(monkeypatch):
 
     client = IPPPrinterClient("192.0.2.1")
     with pytest.raises(PrinterJobError):
-        await client.print_pdf(b"%PDF-fake", "Test Job")
+        await client.print_job(b"\xff\xd8\xff-fake", "Test Job")
 
 
 @pytest.mark.asyncio
-async def test_ipp_printer_client_succeeds_and_sends_pdf_data(monkeypatch):
+async def test_ipp_printer_client_succeeds_and_sends_jpeg_data(monkeypatch):
     captured = {}
 
     class FakeIPP:
@@ -90,6 +90,7 @@ async def test_ipp_printer_client_succeeds_and_sends_pdf_data(monkeypatch):
     monkeypatch.setattr("app.services.printing.IPP", FakeIPP)
 
     client = IPPPrinterClient("192.0.2.1")
-    await client.print_pdf(b"%PDF-fake", "Test Job")
+    await client.print_job(b"\xff\xd8\xff-fake", "Test Job")
 
-    assert captured["message"]["data"] == b"%PDF-fake"
+    assert captured["message"]["data"] == b"\xff\xd8\xff-fake"
+    assert captured["message"]["operation-attributes-tag"]["document-format"] == "image/jpeg"

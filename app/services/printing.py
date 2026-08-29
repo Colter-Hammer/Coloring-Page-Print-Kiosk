@@ -11,14 +11,18 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.models import PrintLog
-from app.services.images import flatten_to_white
+from app.services.images import flatten_to_white, rasterize_pdf_page
 
 PAGE_SIZES_INCHES = {
     "letter": (8.5, 11.0),
     "a4": (8.27, 11.69),
 }
 
-DPI = 150
+# The Canon MX490 (and other AirPrint-only, non-"IPP Everywhere" printers)
+# doesn't advertise application/pdf in document-format-supported, so PDF
+# jobs are rejected outright (client-error-document-format-not-supported).
+# It does advertise image/jpeg, so every job is rasterized to JPEG instead.
+DPI = 300
 
 
 class PrinterUnreachableError(Exception):
@@ -30,7 +34,7 @@ class PrinterJobError(Exception):
 
 
 class PrinterClient(Protocol):
-    async def print_pdf(self, pdf_bytes: bytes, job_name: str) -> None: ...
+    async def print_job(self, image_bytes: bytes, job_name: str) -> None: ...
 
 
 CONNECT_TIMEOUT_SECONDS = 4
@@ -42,7 +46,7 @@ class IPPPrinterClient:
     def __init__(self, printer_ip: str) -> None:
         self._printer_ip = printer_ip
 
-    async def print_pdf(self, pdf_bytes: bytes, job_name: str) -> None:
+    async def print_job(self, image_bytes: bytes, job_name: str) -> None:
         ipp = IPP(
             host=self._printer_ip,
             base_path="/ipp/print",
@@ -53,10 +57,10 @@ class IPPPrinterClient:
                 IppOperation.PRINT_JOB,
                 {
                     "operation-attributes-tag": {
-                        "document-format": "application/pdf",
+                        "document-format": "image/jpeg",
                         "job-name": job_name,
                     },
-                    "data": pdf_bytes,
+                    "data": image_bytes,
                 },
             )
         except IPPConnectionError as exc:
@@ -67,24 +71,33 @@ class IPPPrinterClient:
             await ipp.close()
 
 
-def image_to_pdf(image_path: Path, page_size: str = "letter") -> bytes:
+def _compose_page_jpeg(img: Image.Image, page_size: str = "letter") -> bytes:
     width_in, height_in = PAGE_SIZES_INCHES.get(page_size, PAGE_SIZES_INCHES["letter"])
     canvas_size = (round(width_in * DPI), round(height_in * DPI))
 
+    flattened = flatten_to_white(img)
+    flattened.thumbnail(canvas_size)
+
+    canvas = Image.new("RGB", canvas_size, "white")
+    offset = (
+        (canvas_size[0] - flattened.width) // 2,
+        (canvas_size[1] - flattened.height) // 2,
+    )
+    canvas.paste(flattened, offset)
+
+    buffer = io.BytesIO()
+    canvas.save(buffer, format="JPEG", quality=92, dpi=(DPI, DPI))
+    return buffer.getvalue()
+
+
+def image_to_jpeg(image_path: Path, page_size: str = "letter") -> bytes:
     with Image.open(image_path) as img:
-        flattened = flatten_to_white(img)
-        flattened.thumbnail(canvas_size)
+        return _compose_page_jpeg(img, page_size)
 
-        canvas = Image.new("RGB", canvas_size, "white")
-        offset = (
-            (canvas_size[0] - flattened.width) // 2,
-            (canvas_size[1] - flattened.height) // 2,
-        )
-        canvas.paste(flattened, offset)
 
-        buffer = io.BytesIO()
-        canvas.save(buffer, format="PDF", resolution=DPI)
-        return buffer.getvalue()
+def pdf_to_jpeg(pdf_bytes: bytes, page_size: str = "letter") -> bytes:
+    img = rasterize_pdf_page(pdf_bytes, dpi=DPI)
+    return _compose_page_jpeg(img, page_size)
 
 
 def get_recent_print_count(db: Session, window_hours: int = 1) -> int:

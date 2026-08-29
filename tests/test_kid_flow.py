@@ -75,8 +75,8 @@ class FakePrinterClient:
         self.should_raise = should_raise
         self.calls: list[tuple[bytes, str]] = []
 
-    async def print_pdf(self, pdf_bytes: bytes, job_name: str) -> None:
-        self.calls.append((pdf_bytes, job_name))
+    async def print_job(self, image_bytes: bytes, job_name: str) -> None:
+        self.calls.append((image_bytes, job_name))
         if self.should_raise:
             raise self.should_raise
 
@@ -106,7 +106,7 @@ def _seed_with_print_pdf(db_session, images_dir):
     Image.new("RGB", (200, 200), "red").save(full_path, format="PNG")
     pdf_path = images_dir / print_path
     pdf_path.parent.mkdir(parents=True, exist_ok=True)
-    pdf_path.write_bytes(b"%PDF-fake-print-bytes")
+    Image.new("RGB", (200, 200), "red").save(pdf_path, format="PDF")
     page = Page(
         category_id=category.id,
         image_path=image_path,
@@ -118,7 +118,9 @@ def _seed_with_print_pdf(db_session, images_dir):
     return category, page
 
 
-def test_print_sends_print_path_bytes_verbatim(db_session, images_dir):
+def test_print_rasterizes_print_path_pdf_to_jpeg(db_session, images_dir):
+    # The printer doesn't accept application/pdf over IPP, so a stored PDF
+    # must be rasterized to JPEG before being handed to the printer client.
     _category, page = _seed_with_print_pdf(db_session, images_dir)
     fake_printer = FakePrinterClient()
     app.dependency_overrides[get_db] = lambda: db_session
@@ -129,7 +131,7 @@ def test_print_sends_print_path_bytes_verbatim(db_session, images_dir):
 
     assert response.status_code == 200
     assert len(fake_printer.calls) == 1
-    assert fake_printer.calls[0][0] == b"%PDF-fake-print-bytes"
+    assert fake_printer.calls[0][0].startswith(b"\xff\xd8\xff")
 
 
 def test_print_success_shows_confirmation_and_logs(db_session, images_dir):
