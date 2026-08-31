@@ -13,10 +13,11 @@ from app.deps import require_admin
 from app.models import Category, Page
 from app.services.images import (
     InvalidPdfError,
+    compute_content_hash,
+    decode_image,
     looks_like_pdf,
     rasterize_pdf_page,
     save_category_icon,
-    save_page_images,
     save_page_images_from_image,
     save_page_pdf,
     validate_image,
@@ -216,6 +217,11 @@ async def bulk_upload_pages(
     uploaded = 0
     skipped = 0
     skip_reason_counts: dict[str, int] = {}
+    existing_hashes = {
+        h
+        for (h,) in db.query(Page.content_hash).filter_by(category_id=category_id).all()
+        if h is not None
+    }
     for upload in files:
         if not upload.filename:
             continue
@@ -223,20 +229,31 @@ async def bulk_upload_pages(
 
         if looks_like_pdf(file_bytes):
             try:
-                raster_img = rasterize_pdf_page(file_bytes)
+                decoded_img = rasterize_pdf_page(file_bytes)
             except InvalidPdfError as exc:
                 skipped += 1
                 skip_reason_counts[exc.reason] = skip_reason_counts.get(exc.reason, 0) + 1
                 continue
-            image_path, thumb_path = save_page_images_from_image(raster_img, images_dir)
-            print_path = save_page_pdf(file_bytes, images_dir)
-        elif validate_image(file_bytes):
-            image_path, thumb_path = save_page_images(file_bytes, images_dir)
-            print_path = None
+            is_pdf = True
         else:
+            decoded_img = decode_image(file_bytes)
+            if decoded_img is None:
+                skipped += 1
+                skip_reason_counts["not_supported"] = skip_reason_counts.get("not_supported", 0) + 1
+                continue
+            is_pdf = False
+
+        digest = compute_content_hash(decoded_img)
+        if digest in existing_hashes:
+            decoded_img.close()
             skipped += 1
-            skip_reason_counts["not_supported"] = skip_reason_counts.get("not_supported", 0) + 1
+            skip_reason_counts["duplicate"] = skip_reason_counts.get("duplicate", 0) + 1
             continue
+        existing_hashes.add(digest)
+
+        image_path, thumb_path = save_page_images_from_image(decoded_img, images_dir)
+        decoded_img.close()
+        print_path = save_page_pdf(file_bytes, images_dir) if is_pdf else None
 
         db.add(
             Page(
@@ -245,6 +262,7 @@ async def bulk_upload_pages(
                 image_path=image_path,
                 thumb_path=thumb_path,
                 print_path=print_path,
+                content_hash=digest,
                 source="admin_upload",
             )
         )
@@ -257,6 +275,7 @@ async def bulk_upload_pages(
             "multi_page": "multi-page PDF",
             "corrupt": "corrupt PDF",
             "encrypted": "password-protected PDF",
+            "duplicate": "already in this category",
         }
         parts = [f"{count} {labels[reason]}" for reason, count in skip_reason_counts.items() if count]
         message += f", {skipped} skipped (" + "; ".join(parts) + ")"

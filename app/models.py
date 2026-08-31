@@ -30,6 +30,7 @@ class Page(Base):
     image_path: Mapped[str] = mapped_column(String(500), nullable=False)
     thumb_path: Mapped[str] = mapped_column(String(500), nullable=False)
     print_path: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    content_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
     source: Mapped[str] = mapped_column(String(20), nullable=False, default="admin_upload")
     created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC))
 

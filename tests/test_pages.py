@@ -5,9 +5,10 @@ import pytest
 from fastapi.testclient import TestClient
 from PIL import Image
 
-from app.db import get_db
+from app.db import backfill_page_content_hashes, get_db
 from app.main import app
 from app.models import Category, Page
+from app.services.images import save_page_images_from_image
 
 
 @pytest.fixture
@@ -182,3 +183,107 @@ def test_recategorize_page_moves_it_to_new_category(client, db_session, images_d
     assert response.status_code == 303
     db_session.refresh(page)
     assert page.category_id == category_b.id
+
+
+def test_bulk_upload_skips_duplicate_within_same_category(client, db_session, images_dir):
+    category = _make_category(db_session)
+
+    response = client.post(
+        f"/admin/categories/{category.id}/pages",
+        files=[
+            ("files", ("a.png", _png_bytes("red"), "image/png")),
+            ("files", ("a-copy.png", _png_bytes("red"), "image/png")),
+        ],
+        follow_redirects=True,
+    )
+    assert response.status_code == 200
+    assert "1 uploaded" in response.text
+    assert "skipped" in response.text.lower()
+
+    pages = db_session.query(Page).filter_by(category_id=category.id).all()
+    assert len(pages) == 1
+    assert pages[0].content_hash is not None
+
+
+def test_bulk_upload_skips_duplicate_across_separate_requests(client, db_session, images_dir):
+    category = _make_category(db_session)
+    client.post(
+        f"/admin/categories/{category.id}/pages",
+        files=[("files", ("a.png", _png_bytes("red"), "image/png"))],
+    )
+    response = client.post(
+        f"/admin/categories/{category.id}/pages",
+        files=[("files", ("a-again.png", _png_bytes("red"), "image/png"))],
+        follow_redirects=True,
+    )
+    assert response.status_code == 200
+    assert "0 uploaded" in response.text
+    assert "skipped" in response.text.lower()
+    assert db_session.query(Page).filter_by(category_id=category.id).count() == 1
+
+
+def test_bulk_upload_same_image_allowed_across_categories(client, db_session, images_dir):
+    category_a = _make_category(db_session, "Animals")
+    category_b = _make_category(db_session, "Dinosaurs")
+
+    client.post(
+        f"/admin/categories/{category_a.id}/pages",
+        files=[("files", ("a.png", _png_bytes("red"), "image/png"))],
+    )
+    response = client.post(
+        f"/admin/categories/{category_b.id}/pages",
+        files=[("files", ("a.png", _png_bytes("red"), "image/png"))],
+    )
+    assert response.status_code == 303
+
+    assert db_session.query(Page).filter_by(category_id=category_a.id).count() == 1
+    assert db_session.query(Page).filter_by(category_id=category_b.id).count() == 1
+
+
+def test_backfill_hashes_legacy_pages_and_dedup_against_them(client, db_session, images_dir):
+    category = _make_category(db_session)
+
+    # Simulate a pre-migration row: saved image files on disk, no content_hash.
+    with Image.open(io.BytesIO(_png_bytes("green"))) as img:
+        image_path, thumb_path = save_page_images_from_image(img, images_dir)
+    legacy_page = Page(
+        category_id=category.id,
+        title="legacy.png",
+        image_path=image_path,
+        thumb_path=thumb_path,
+        source="admin_upload",
+    )
+    db_session.add(legacy_page)
+    db_session.commit()
+    assert legacy_page.content_hash is None
+
+    backfill_page_content_hashes(db_session, images_dir)
+    db_session.refresh(legacy_page)
+    assert legacy_page.content_hash is not None
+    assert len(legacy_page.content_hash) == 64
+
+    # Backfilled hash must be comparable to a fresh upload's hash.
+    response = client.post(
+        f"/admin/categories/{category.id}/pages",
+        files=[("files", ("green-again.png", _png_bytes("green"), "image/png"))],
+        follow_redirects=True,
+    )
+    assert "0 uploaded" in response.text
+    assert db_session.query(Page).filter_by(category_id=category.id).count() == 1
+
+
+def test_backfill_skips_rows_with_missing_image_file(db_session, images_dir):
+    category = _make_category(db_session)
+    page = Page(
+        category_id=category.id,
+        title="missing.png",
+        image_path="pages/full/does-not-exist.jpg",
+        thumb_path="pages/thumb/does-not-exist.jpg",
+        source="admin_upload",
+    )
+    db_session.add(page)
+    db_session.commit()
+
+    backfill_page_content_hashes(db_session, images_dir)  # must not raise
+    db_session.refresh(page)
+    assert page.content_hash is None
